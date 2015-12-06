@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="cl.hcarrasco.data.MainActivity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <RelativeLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="@android:color/holo_green_dark">
+        <EditText
+            android:id="@+id/command"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_alignParentTop="true"
+            android:background="@android:color/transparent"
+            android:gravity="center_horizontal"
+            android:hint="Enter text to send here"
+            android:layout_marginTop="50dp"/>
+        <Button
+            android:id="@+id/send_btn"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="Send Data"
+            android:layout_marginBottom="15dp"
+            android:layout_marginTop="10dp"
+            android:layout_below="@+id/command"
+            android:layout_centerHorizontal="true" />
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/set_ip"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:background="@android:color/holo_orange_light"
+        android:visibility="visible">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="25dp"
+            android:layout_centerHorizontal="true"
+            android:text="Please set IP:PORT"/>
+        <EditText
+            android:id="@+id/te_ip"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:layout_centerHorizontal="true"
+            android:hint="Enter IP" />
+        <EditText
+            android:id="@+id/te_port"
+            android:layout_marginTop="100dp"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:hint="Enter Port"
+            android:inputType="number"/>
+        <Button
+            android:id="@+id/ip_btn"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="155dp"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="Save" />
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/set_about"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:background="@android:color/holo_orange_light"
+        android:visibility="invisible">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="80dp"
+            android:layout_centerHorizontal="true"
+            android:text="by Hector Carrasco"
+            android:textSize="18sp"/>
+    </RelativeLayout>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignBottom="@id/header"
+        android:layout_marginBottom="-32dp"
+        android:layout_marginRight="20dp" />
+</RelativeLayout>
