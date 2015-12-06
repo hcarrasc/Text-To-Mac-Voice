@@ -1,7 +1,10 @@
 package cl.hcarrasco.texttomacvoice;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -26,11 +30,11 @@ import java.net.UnknownHostException;
 public class MainActivity extends AppCompatActivity {
 
     private Socket socket;
-    private String ipServer   =null;
-    private int    portServer =0;
-    InputStream in;
-    Thread background;
-    DataReceiver dataReceiver;
+    private String ipServer   = null;
+    private int    portServer = 0;
+    InputStream    in;
+    Thread         background;
+    DataReceiver   dataReceiver;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
 
@@ -46,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
         buttonSend.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                System.out.println("boton clicked sending data...");
+                Log.i("INFO", "boton clicked sending data...");
                 if(ipServer!=null && portServer!=0){
                     EditText et = (EditText) findViewById(R.id.command);
                     String str = ">hc;msg=" + et.getText().toString() + "<";
@@ -93,6 +97,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        ImageView imagePersonalWeb = (ImageView) findViewById(R.id.logo_wwwpersonal);
+        imagePersonalWeb.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                goToUrl("http://hcarrasco.cl");
+            }
+        });
+
+        ImageView imageLinkedin = (ImageView) findViewById(R.id.logo_linkedin);
+        imageLinkedin.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                goToUrl("http://cl.linkedin.com/in/hcarrasc");
+            }
+        });
+
         background = new Thread(new Runnable() {
             // After call for background.start this run method call
             public void run() {
@@ -113,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
                         threadMsg(SetServerString);
                     } catch (Throwable t) {
                         // just end the background thread
-                        Log.i("Animation", "Thread  exception " + t);
+                        Log.i("INFO", "Thread  exception " + t);
                     }
                 }
             }
@@ -131,9 +149,9 @@ public class MainActivity extends AppCompatActivity {
             // Define the Handler that receives messages from the thread and update the progress
             private final Handler handler = new Handler() {
                 public void handleMessage(Message msg) {
-                    String aResponse = msg.getData().getString("message");
-                    if ((null != aResponse)) {
-                        Toast.makeText( getBaseContext(), "Server Response: "+aResponse, Toast.LENGTH_SHORT).show();
+                    String response = msg.getData().getString("message");
+                    if ((null != response)) {
+                        Toast.makeText( getBaseContext(), "Server Response: "+response, Toast.LENGTH_SHORT).show();
                     }
                     else {
                         Toast.makeText(getBaseContext(), "Not Got Response From Server.", Toast.LENGTH_SHORT).show();
@@ -141,6 +159,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
         });
+    }
+
+    private void goToUrl (String url) {
+        Uri uriUrl = Uri.parse(url);
+        Intent launchBrowser = new Intent(Intent.ACTION_VIEW, uriUrl);
+        startActivity(launchBrowser);
     }
 
     @Override
@@ -159,9 +183,16 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Option2", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.item3:
-
                 aboutView.setVisibility(View.VISIBLE);
                 ipConfigView.setVisibility(View.INVISIBLE);
+                return true;
+            case R.id.menu_item_share:
+                Intent sendIntent = new Intent();
+                sendIntent.setAction(Intent.ACTION_SEND);
+                sendIntent.setType("text/plain");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, "Test voice->mac share intent :D ");
+                startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.app_name)));
+                Log.i("INFO", "lanzando share");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -184,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     class DataReceiver implements Runnable {
         @Override
         public void run() {
-            System.out.println ("esperando datos...");
+            Log.i("INFO", "recibiendo datos");
             try{
                 in = socket.getInputStream();
                 BufferedReader br = new BufferedReader(new InputStreamReader(in));
