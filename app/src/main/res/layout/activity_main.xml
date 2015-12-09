@@ -37,13 +37,14 @@
         android:layout_height="match_parent"
         android:layout_below="@id/header"
         android:background="@android:color/holo_orange_light"
-        android:visibility="invisible">
+        android:visibility="visible">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="25dp"
             android:layout_centerHorizontal="true"
-            android:text="Please set IP:PORT"/>
+            android:textSize="16sp"
+            android:text="Set IP:PORT"/>
         <EditText
             android:id="@+id/te_ip"
             android:layout_width="180dp"
@@ -73,7 +74,7 @@
         android:layout_height="match_parent"
         android:layout_below="@id/header"
         android:background="@android:color/holo_orange_light"
-        android:visibility="visible">
+        android:visibility="invisible">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

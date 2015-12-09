@@ -1,12 +1,15 @@
 package cl.hcarrasco.texttomacvoice;
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.view.MenuItemCompat;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,20 +40,41 @@ public class MainActivity extends AppCompatActivity {
     DataReceiver   dataReceiver;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
+    String userName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button buttonSend = (Button) findViewById(R.id.send_btn);
+
         dataReceiver = new DataReceiver();
         ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
         aboutView = (RelativeLayout) findViewById(R.id.set_about);
 
+        Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
+        int count = c.getCount();
+        String[] columnNames = c.getColumnNames();
+        boolean b = c.moveToFirst();
+        int position = c.getPosition();
+        if (count == 1 && position == 0) {
+            for (int j = 0; j < columnNames.length; j++) {
+                String columnName = columnNames[j];
+                String columnValue = c.getString(c.getColumnIndex(columnName));
+                if ("display_name".equals(columnName)){
+                    userName = columnValue;
+                    continue;
+                }
+            }
+        }
+        c.close();
+        Log.i("INFO", userName);
+
+
+        Button buttonSend = (Button) findViewById(R.id.send_btn);
         buttonSend.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.i("INFO", "boton clicked sending data...");
+                Log.i("INFO", "button clicked sending data...");
                 if(ipServer!=null && portServer!=0){
                     EditText et = (EditText) findViewById(R.id.command);
                     String str = ">hc;msg=" + et.getText().toString() + "<";
@@ -67,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.VISIBLE);
+                    Toast.makeText( getBaseContext(), "Please, set IP and PORT first to communicate with server", Toast.LENGTH_SHORT).show();
                 }
             }
         });
