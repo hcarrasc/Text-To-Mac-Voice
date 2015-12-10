@@ -1,15 +1,15 @@
 package cl.hcarrasco.texttomacvoice;
 
-import android.content.Context;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
+import android.speech.RecognizerIntent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,6 +29,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,7 +42,10 @@ public class MainActivity extends AppCompatActivity {
     DataReceiver   dataReceiver;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
-    String userName;
+    String         userName;
+    String         messageToServer;
+    EditText mainEditTextView;
+    final int REQ_CODE_SPEECH_INPUT = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
         dataReceiver = new DataReceiver();
         ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
         aboutView = (RelativeLayout) findViewById(R.id.set_about);
+        mainEditTextView = (EditText) findViewById(R.id.command);
 
         Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
         int count = c.getCount();
@@ -75,23 +81,27 @@ public class MainActivity extends AppCompatActivity {
         buttonSend.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i("INFO", "button clicked sending data...");
-                if(ipServer!=null && portServer!=0){
+                if (ipServer != null && portServer != 0) {
                     EditText et = (EditText) findViewById(R.id.command);
-                    String str = ">hc;msg=" + et.getText().toString() + "<";
+                    if (userName != null) {
+                        messageToServer = ">hc;msg=" + et.getText().toString() + ";sender=" + userName + "<";
+                    } else {
+                        messageToServer = ">hc;msg=" + et.getText().toString() + ";sender=Anonymous<";
+                    }
+
                     PrintWriter out = null;
                     try {
                         out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    out.println(str);
+                    out.println(messageToServer);
                     out.flush();
                     //background.start();
-                }
-                else {
+                } else {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.VISIBLE);
-                    Toast.makeText( getBaseContext(), "Please, set IP and PORT first to communicate with server", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getBaseContext(), "Please, set IP and PORT first to communicate with server", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -104,23 +114,30 @@ public class MainActivity extends AppCompatActivity {
 
                 ipServer = etIP.getText().toString();
                 String portValidator = etPort.getText().toString();
-                if(!"".equals(portValidator)){
+                if (!"".equals(portValidator)) {
                     portServer = Integer.parseInt(portValidator);
-                }
-                else {
+                } else {
                     portServer = 0;
                 }
 
-                if(ipServer!=null && portServer!=0){
+                if (ipServer != null && portServer != 0) {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.INVISIBLE);
                     new Thread(new ClientThread()).start();
-                }else{
+                } else {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.INVISIBLE);
                 }
             }
         });
+
+        ImageView speechButton = (ImageView) findViewById(R.id.btnSpeak);
+        speechButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                promptSpeechInput();
+            }
+        });
+
 
         ImageView imagePersonalWeb = (ImageView) findViewById(R.id.logo_wwwpersonal);
         imagePersonalWeb.setOnClickListener(new View.OnClickListener() {
@@ -184,6 +201,32 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
         });
+    }
+
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.speech_prompt));
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+            Toast.makeText(getApplicationContext(), getString(R.string.speech_not_supported), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+                    ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    mainEditTextView.append(result.get(0));
+                }
+                break;
+            }
+        }
     }
 
     private void goToUrl (String url) {
@@ -253,5 +296,4 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
 }
