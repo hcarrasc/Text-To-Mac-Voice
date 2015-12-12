@@ -74,7 +74,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         c.close();
-        Log.i("INFO", userName);
+        if(userName!=null){
+            Log.i("INFO", userName);
+        } else {
+            Log.i("INFO", "user NULL");
+        }
+
 
 
         Button buttonSend = (Button) findViewById(R.id.send_btn);
@@ -247,9 +252,9 @@ public class MainActivity extends AppCompatActivity {
                 aboutView.setVisibility(View.INVISIBLE);
                 ipConfigView.setVisibility(View.VISIBLE);
                 return true;
-            case R.id.item2:
+ /*           case R.id.item2:
                 Toast.makeText(this, "Option2", Toast.LENGTH_SHORT).show();
-                return true;
+                return true;*/
             case R.id.item3:
                 aboutView.setVisibility(View.VISIBLE);
                 ipConfigView.setVisibility(View.INVISIBLE);
