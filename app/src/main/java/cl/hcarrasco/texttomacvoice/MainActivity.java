@@ -1,6 +1,7 @@
 package cl.hcarrasco.texttomacvoice;
 
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -14,10 +15,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
@@ -42,9 +45,14 @@ public class MainActivity extends AppCompatActivity {
     DataReceiver   dataReceiver;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
+    RelativeLayout recentView;
     String         userName;
     String         messageToServer;
-    EditText mainEditTextView;
+    EditText       mainEditTextView;
+    EditText       et;
+    TextView       connectionResultTextView;
+
+    Context context;
     final int REQ_CODE_SPEECH_INPUT = 100;
 
     @Override
@@ -53,12 +61,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        context = this.getApplicationContext();
         dataReceiver = new DataReceiver();
         ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
         aboutView = (RelativeLayout) findViewById(R.id.set_about);
+        recentView = (RelativeLayout) findViewById(R.id.list_recent);
         mainEditTextView = (EditText) findViewById(R.id.command);
+        et = (EditText) findViewById(R.id.command);
+        connectionResultTextView = (TextView) findViewById(R.id.set_connected);
 
-        Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
+        final Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
         int count = c.getCount();
         String[] columnNames = c.getColumnNames();
         boolean b = c.moveToFirst();
@@ -80,14 +92,12 @@ public class MainActivity extends AppCompatActivity {
             Log.i("INFO", "user NULL");
         }
 
-
-
         Button buttonSend = (Button) findViewById(R.id.send_btn);
         buttonSend.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i("INFO", "button clicked sending data...");
                 if (ipServer != null && portServer != 0) {
-                    EditText et = (EditText) findViewById(R.id.command);
+
                     if (userName != null) {
                         messageToServer = ">hc;msg=" + et.getText().toString() + ";sender=" + userName + "<";
                     } else {
@@ -102,10 +112,12 @@ public class MainActivity extends AppCompatActivity {
                     }
                     out.println(messageToServer);
                     out.flush();
-                    //background.start();
+
                 } else {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.VISIBLE);
+                    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(et.getWindowToken(), 0);
                     Toast.makeText(getBaseContext(), "Please, set IP and PORT first to communicate with server", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -126,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (ipServer != null && portServer != 0) {
+                    connectionResultTextView.setText(getResources().getText(R.string.connected));
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.INVISIBLE);
                     new Thread(new ClientThread()).start();
@@ -208,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /* Speech recognition block */
     private void promptSpeechInput() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -240,6 +254,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(launchBrowser);
     }
 
+    /* Menu handler block */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main, menu);
@@ -250,22 +265,27 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.item1:
                 aboutView.setVisibility(View.INVISIBLE);
+                recentView.setVisibility(View.INVISIBLE);
                 ipConfigView.setVisibility(View.VISIBLE);
                 return true;
- /*           case R.id.item2:
-                Toast.makeText(this, "Option2", Toast.LENGTH_SHORT).show();
-                return true;*/
+            case R.id.item2:
+                //aboutView.setVisibility(View.INVISIBLE);
+                //ipConfigView.setVisibility(View.INVISIBLE);
+                //recentView.setVisibility(View.VISIBLE);
+                Toast.makeText(getApplicationContext(), "Not available jet", Toast.LENGTH_LONG).show();
+                return true;
             case R.id.item3:
                 aboutView.setVisibility(View.VISIBLE);
                 ipConfigView.setVisibility(View.INVISIBLE);
+                recentView.setVisibility(View.INVISIBLE);
                 return true;
             case R.id.menu_item_share:
                 Intent sendIntent = new Intent();
                 sendIntent.setAction(Intent.ACTION_SEND);
                 sendIntent.setType("text/plain");
-                sendIntent.putExtra(Intent.EXTRA_TEXT, "Test voice->mac share intent :D ");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_text));
                 startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.app_name)));
-                Log.i("INFO", "lanzando share");
+                Log.i("INFO", "launching share intent");
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -278,11 +298,36 @@ public class MainActivity extends AppCompatActivity {
             try {
                 socket = new Socket(ipServer, portServer);
             } catch (UnknownHostException e1) {
+                threadMsg("Connection fails");
                 e1.printStackTrace();
             } catch (IOException e1) {
+                threadMsg("Connection fails");
                 e1.printStackTrace();
             }
         }
+
+        private void threadMsg(String msg) {
+            if (!msg.equals(null) && !msg.equals("")) {
+                Message msgObj = handlerConnection.obtainMessage();
+                Bundle b = new Bundle();
+                b.putString("message", msg);
+                msgObj.setData(b);
+                handlerConnection.sendMessage(msgObj);
+            }
+        }
+
+        // Define the Handler that receives messages from the thread and update the progress
+        private final Handler handlerConnection = new Handler() {
+            public void handleMessage(Message msg) {
+                String response = msg.getData().getString("message");
+                if ((null != response)) {
+                    connectionResultTextView.setText(getResources().getText(R.string.error_connection));
+                }
+                else {
+                }
+            }
+        };
+
     }
 
     class DataReceiver implements Runnable {
@@ -301,4 +346,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
 }

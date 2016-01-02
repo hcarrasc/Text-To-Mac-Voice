@@ -2,7 +2,7 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="cl.hcarrasco.data.MainActivity"
+    tools:context="cl.hcarrasco.texttomacvoice.MainActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -15,20 +15,20 @@
             android:id="@+id/command"
             android:layout_width="250dp"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_alignParentTop="true"
             android:background="@android:color/transparent"
             android:gravity="center_horizontal"
-            android:hint="Enter text to send here"
-            android:layout_marginTop="50dp"/>
+            android:hint="Enter text to send data or tap button to speech"
+            android:layout_marginTop="61dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignRight="@+id/send_btn"
+            android:layout_alignEnd="@+id/send_btn" />
         <Button
             android:id="@+id/send_btn"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:text="Send Data"
-            android:layout_marginBottom="15dp"
-            android:layout_marginTop="10dp"
-            android:layout_below="@+id/command"
+            android:layout_marginTop="26dp"
+            android:layout_below="@+id/btnSpeak"
             android:layout_centerHorizontal="true" />
         <ImageView
             android:id="@+id/btnSpeak"
@@ -36,11 +36,28 @@
             android:layout_height="50dp"
             android:background="@null"
             android:src="@drawable/micro"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@+id/send_btn"
-            android:layout_toEndOf="@+id/send_btn" />
-
+            android:layout_alignTop="@+id/command"
+            android:layout_toRightOf="@+id/command"
+            android:layout_toEndOf="@+id/command"
+            android:layout_marginLeft="21dp"
+            android:layout_marginStart="21dp" />
     </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:background="@android:color/holo_orange_light"
+        android:visibility="visible">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="35dp"
+            android:layout_centerHorizontal="true"
+            android:maxLines="2"
+            android:textSize="16sp"
+            android:text="Connecting..."
+            android:id="@+id/set_connected"/>
+        </RelativeLayout>
     <RelativeLayout
         android:id="@+id/set_ip"
         android:layout_width="match_parent"
@@ -61,7 +78,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
             android:layout_centerHorizontal="true"
-            android:hint="Enter IP" />
+            android:hint="Enter IP"
+            android:text="192.168.1.40"/>
         <EditText
             android:id="@+id/te_port"
             android:layout_marginTop="100dp"
@@ -69,14 +87,18 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:hint="Enter Port"
+            android:text="1234"
             android:inputType="number"/>
         <Button
             android:id="@+id/ip_btn"
-            android:layout_centerHorizontal="true"
             android:layout_marginTop="155dp"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:text="Save" />
+            android:text="Save"
+            android:layout_alignRight="@+id/te_port"
+            android:layout_alignEnd="@+id/te_port"
+            android:layout_alignLeft="@+id/te_port"
+            android:layout_alignStart="@+id/te_port" />
     </RelativeLayout>
     <RelativeLayout
         android:id="@+id/set_about"
@@ -118,5 +140,18 @@
         android:layout_alignParentRight="true"
         android:layout_alignBottom="@id/header"
         android:layout_marginBottom="-32dp"
-        android:layout_marginRight="20dp" />
+        android:layout_marginRight="20dp"
+        android:visibility="invisible"/>
+    <RelativeLayout
+        android:id="@+id/list_recent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:background="@android:color/white"
+        android:visibility="invisible">
+        <ListView
+            android:id="@+id/list_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </RelativeLayout>
 </RelativeLayout>
