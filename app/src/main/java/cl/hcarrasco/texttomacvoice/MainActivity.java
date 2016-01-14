@@ -23,17 +23,19 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Locale;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
     private int    portServer = 0;
     InputStream    in;
     Thread         background;
-    DataReceiver   dataReceiver;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
     RelativeLayout recentView;
@@ -51,9 +52,11 @@ public class MainActivity extends AppCompatActivity {
     EditText       mainEditTextView;
     EditText       et;
     TextView       connectionResultTextView;
+    AdView         adView;
 
     Context context;
     final int REQ_CODE_SPEECH_INPUT = 100;
+    boolean adsVisible = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         context = this.getApplicationContext();
-        dataReceiver = new DataReceiver();
         ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
         aboutView = (RelativeLayout) findViewById(R.id.set_about);
         recentView = (RelativeLayout) findViewById(R.id.list_recent);
@@ -92,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("INFO", "user NULL");
         }
 
-        Button buttonSend = (Button) findViewById(R.id.send_btn);
+        final Button buttonSend = (Button) findViewById(R.id.send_btn);
+        buttonSend.setEnabled(false);
         buttonSend.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i("INFO", "button clicked sending data...");
@@ -113,6 +116,16 @@ public class MainActivity extends AppCompatActivity {
                     out.println(messageToServer);
                     out.flush();
 
+                    new Thread(new ClientThreadReceiver()).start();
+
+                    if (adsVisible){
+                        adsVisible = false;
+                        adView = (AdView) findViewById(R.id.ad_view);
+                        AdRequest adRequest = new AdRequest.Builder().build();
+                        adView.loadAd(adRequest);
+                        Log.i("INFO", "Reloading ads...");
+                    }
+
                 } else {
                     RelativeLayout ipConfigView = (RelativeLayout) findViewById(R.id.set_ip);
                     ipConfigView.setVisibility(View.VISIBLE);
@@ -126,6 +139,9 @@ public class MainActivity extends AppCompatActivity {
         Button buttonSetIP = (Button) findViewById(R.id.ip_btn);
         buttonSetIP.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+
+                buttonSend.setEnabled(true);
+
                 EditText etIP = (EditText) findViewById(R.id.te_ip);
                 EditText etPort = (EditText) findViewById(R.id.te_port);
 
@@ -221,6 +237,33 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /** Called when leaving the activity */
+    @Override
+    public void onPause() {
+        if (adView != null) {
+            adView.pause();
+        }
+        super.onPause();
+    }
+
+    /** Called when returning to the activity */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adView != null) {
+            adView.resume();
+        }
+    }
+
+    /** Called before the activity is destroyed */
+    @Override
+    public void onDestroy() {
+        if (adView != null) {
+            adView.destroy();
+        }
+        super.onDestroy();
+    }
+
     /* Speech recognition block */
     private void promptSpeechInput() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -269,22 +312,12 @@ public class MainActivity extends AppCompatActivity {
                 ipConfigView.setVisibility(View.VISIBLE);
                 return true;
             case R.id.item2:
-                //aboutView.setVisibility(View.INVISIBLE);
-                //ipConfigView.setVisibility(View.INVISIBLE);
-                //recentView.setVisibility(View.VISIBLE);
                 Toast.makeText(getApplicationContext(), "Not available jet", Toast.LENGTH_LONG).show();
                 return true;
             case R.id.item3:
-                aboutView.setVisibility(View.VISIBLE);
-                ipConfigView.setVisibility(View.INVISIBLE);
-                recentView.setVisibility(View.INVISIBLE);
-                return true;
-            case R.id.menu_rate_app:
                 Log.i("INFO", "Menu Rate app");
                 Uri uri = Uri.parse("market://details?id=" + context.getPackageName());
                 Intent goToMarket = new Intent(Intent.ACTION_VIEW, uri);
-                // To count with Play market backstack, After pressing back button,
-                // to taken back to our application, we need to add following flags to intent.
                 goToMarket.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
                 try {
                     startActivity(goToMarket);
@@ -293,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
                             Uri.parse("http://play.google.com/store/apps/details?id=" + context.getPackageName())));
                 }
                 return true;
-            case R.id.menu_item_share:
+            case R.id.item4:
                 Intent sendIntent = new Intent();
                 sendIntent.setAction(Intent.ACTION_SEND);
                 sendIntent.setType("text/plain");
@@ -301,8 +334,31 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.app_name)));
                 Log.i("INFO", "launching share intent");
                 return true;
+            case R.id.item5:
+                aboutView.setVisibility(View.VISIBLE);
+                ipConfigView.setVisibility(View.INVISIBLE);
+                recentView.setVisibility(View.INVISIBLE);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    class ClientThreadReceiver implements Runnable {
+        @Override
+        public void run() {
+            byte[] data = new byte[5120];
+            try {
+                in = socket.getInputStream();
+                int size = in.read(data);
+                String msgFromServer = new String (data);
+                msgFromServer = msgFromServer.trim();
+                // see the received data from server in you LogCat
+                Log.e("data received number", ""+size);
+                Log.e("data from server", msgFromServer);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -342,23 +398,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-    }
-
-    class DataReceiver implements Runnable {
-        @Override
-        public void run() {
-            Log.i("INFO", "recibiendo datos");
-            try{
-                in = socket.getInputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(in));
-                String line;
-                while ((line = br.readLine ()) != null) {
-                    System.out.println (line);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 }

@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/item1" android:title="Configure IP/Port"></item>
     <item android:id="@+id/item2" android:title="Recent messages"></item>
-    <item android:id="@+id/item3" android:title="About developer"></item>
-    <item android:id="@+id/menu_rate_app" android:title="Rate this application"></item>
-    <item android:id="@+id/menu_item_share" android:title="Share with friends" android:actionProviderClass="android.widget.ShareActionProvider" />
+    <item android:id="@+id/item3" android:title="Rate this application"></item>
+    <item android:id="@+id/item4" android:title="Share with friends" android:actionProviderClass="android.widget.ShareActionProvider" />
+    <item android:id="@+id/item5" android:title="About developer"></item>
 </menu>

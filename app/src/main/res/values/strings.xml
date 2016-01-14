@@ -2,7 +2,8 @@
     <string name="app_name">Text to Mac Voice</string>
     <string name="speech_prompt">Say something&#8230;</string>
     <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
-    <string name="share_text">I am using TextToMacVoice app, we can talk now without spies :) download it: http://hcarrasco.cl/apps/TexttoMacVoice</string>
+    <string name="share_text">Download TextToMacVoice app, writes in Android and listen it in your Mac http://play.google.com/store/apps/details?id=cl.hcarrasco.texttomacvoice</string>
     <string name="error_connection">Error connecting to server.\nMake sure server is running</string>
     <string name="connected">Connected to Server </string>
+    <string name="banner_ad_unit_id">ca-app-pub-4481453098690342/5404812776</string>
 </resources>
