@@ -26,24 +26,14 @@ import android.widget.Toast;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    private Socket socket;
     private String ipServer   = null;
     private int    portServer = 0;
-    InputStream    in;
-    Thread         background;
     RelativeLayout ipConfigView;
     RelativeLayout aboutView;
     RelativeLayout recentView;
@@ -75,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
         final Cursor c = getContentResolver().query(ContactsContract.Profile.CONTENT_URI, null, null, null, null);
         int count = c.getCount();
         String[] columnNames = c.getColumnNames();
-        boolean b = c.moveToFirst();
         int position = c.getPosition();
+
         if (count == 1 && position == 0) {
             for (int j = 0; j < columnNames.length; j++) {
                 String columnName = columnNames[j];
@@ -107,14 +97,6 @@ public class MainActivity extends AppCompatActivity {
                         messageToServer = ">hc;msg=" + et.getText().toString() + ";sender=Anonymous<";
                     }
 
-                    PrintWriter out = null;
-                    try {
-                        out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    out.println(messageToServer);
-                    out.flush();
 
                     new Thread(new ClientThreadReceiver()).start();
 
@@ -187,54 +169,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        background = new Thread(new Runnable() {
-            // After call for background.start this run method call
-            public void run() {
-                while(true) {
-                    try {
-                        Thread.sleep(10000);
-                        String SetServerString = "dataToServer";
-                        try {
-                            PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                            if(!out.checkError()){
-                                SetServerString = "connected!";
-                            }else {
-                                SetServerString = "disconnected!";
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        threadMsg(SetServerString);
-                    } catch (Throwable t) {
-                        // just end the background thread
-                        Log.i("INFO", "Thread  exception " + t);
-                    }
-                }
-            }
-
-            private void threadMsg(String msg) {
-                if (!msg.equals(null) && !msg.equals("")) {
-                    Message msgObj = handler.obtainMessage();
-                    Bundle b = new Bundle();
-                    b.putString("message", msg);
-                    msgObj.setData(b);
-                    handler.sendMessage(msgObj);
-                }
-            }
-
-            // Define the Handler that receives messages from the thread and update the progress
-            private final Handler handler = new Handler() {
-                public void handleMessage(Message msg) {
-                    String response = msg.getData().getString("message");
-                    if ((null != response)) {
-                        Toast.makeText( getBaseContext(), "Server Response: "+response, Toast.LENGTH_SHORT).show();
-                    }
-                    else {
-                        Toast.makeText(getBaseContext(), "Not Got Response From Server.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            };
-        });
     }
 
     /** Called when leaving the activity */
@@ -347,57 +281,19 @@ public class MainActivity extends AppCompatActivity {
     class ClientThreadReceiver implements Runnable {
         @Override
         public void run() {
-            byte[] data = new byte[5120];
-            try {
-                in = socket.getInputStream();
-                int size = in.read(data);
-                String msgFromServer = new String (data);
-                msgFromServer = msgFromServer.trim();
-                // see the received data from server in you LogCat
-                Log.e("data received number", ""+size);
-                Log.e("data from server", msgFromServer);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
     class ClientThread implements Runnable {
         @Override
         public void run() {
-            try {
-                socket = new Socket(ipServer, portServer);
-            } catch (UnknownHostException e1) {
-                threadMsg("Connection fails");
-                e1.printStackTrace();
-            } catch (IOException e1) {
-                threadMsg("Connection fails");
-                e1.printStackTrace();
-            }
+
         }
 
         private void threadMsg(String msg) {
-            if (!msg.equals(null) && !msg.equals("")) {
-                Message msgObj = handlerConnection.obtainMessage();
-                Bundle b = new Bundle();
-                b.putString("message", msg);
-                msgObj.setData(b);
-                handlerConnection.sendMessage(msgObj);
-            }
+
         }
-
-        // Define the Handler that receives messages from the thread and update the progress
-        private final Handler handlerConnection = new Handler() {
-            public void handleMessage(Message msg) {
-                String response = msg.getData().getString("message");
-                if ((null != response)) {
-                    connectionResultTextView.setText(getResources().getText(R.string.error_connection));
-                }
-                else {
-                }
-            }
-        };
-
     }
 
 }
